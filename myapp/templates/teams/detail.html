@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+
+{% block title %}Echipa {{ project.title }} - Platforma de Cercetare{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Acasă</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'teams_list' %}">Echipe</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ project.title }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2">{{ project.title }}</h1>
+        <p class="text-muted">{{ project.description }}</p>
+    </div>
+    <div class="d-flex">
+        <a href="{% url 'create_task' %}?project={{ project.id }}" class="btn btn-success me-2">
+            <i class="fas fa-plus me-1"></i>Task nou
+        </a>
+        <a href="{% url 'project_detail' project.id %}" class="btn btn-outline-primary">
+            <i class="fas fa-eye me-1"></i>Vezi proiectul
+        </a>
+    </div>
+</div>
+
+<!-- Statistici echipă -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                <h3>{{ members.count }}</h3>
+                <p class="text-muted mb-0">Membri</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-tasks fa-2x text-success mb-2"></i>
+                <h3>{{ total_activities }}</h3>
+                <p class="text-muted mb-0">Task-uri totale</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-2x text-info mb-2"></i>
+                <h3>{{ completed_activities }}</h3>
+                <p class="text-muted mb-0">Finalizate</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+                <h3>{{ overdue_activities }}</h3>
+                <p class="text-muted mb-0">Întârziate</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Membri echipă -->
+    <div class="col-lg-6">
+        <div class="card shadow h-100">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Membri echipă</h5>
+                {% for member in members %}
+                    {% if member.user == request.user and member.role in 'leader,admin' %}
+                    <a href="{% url 'project_members' project.id %}" class="btn btn-sm btn-light">
+                        <i class="fas fa-user-plus"></i>
+                    </a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <div class="card-body">
+                {% if members %}
+                <div class="list-group list-group-flush">
+                    {% for member in members %}
+                    <div class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                {% if member.user.profile.picture %}
+                                <img src="{{ member.user.profile.picture.url }}" alt="{{ member.user.username }}" class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                {% else %}
+                                <div class="bg-light rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 50px; height: 50px;">
+                                    <i class="fas fa-user text-secondary"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <h6 class="mb-0">{{ member.user.get_full_name|default:member.user.username }}
+                                    {% if member.user == request.user %}
+                                    <span class="badge bg-primary ms-1">Tu</span>
+                                    {% endif %}
+                                    </h6>
+                                    <small class="text-muted">{{ member.user.email }}</small>
+                                    {% if member.user.profile.position %}
+                                    <div class="small text-muted">{{ member.user.profile.position }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge {% if member.role == 'leader' %}bg-danger{% elif member.role == 'admin' %}bg-warning text-dark{% elif member.role == 'consultant' %}bg-info{% else %}bg-secondary{% endif %}">
+                                    {{ member.get_role_display }}
+                                </span>
+                                <div class="small text-muted">Din {{ member.joined_at|date:"M Y" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <p>Nu există membri în această echipă.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Activități recente -->
+    <div class="col-lg-6">
+        <div class="card shadow h-100">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Activități recente</h5>
+                <a href="{% url 'all_tasks' %}?project={{ project.id }}" class="btn btn-sm btn-light">
+                    <i class="fas fa-list"></i> Toate
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_activities %}
+                <div class="list-group list-group-flush">
+                    {% for activity in recent_activities %}
+                    <div class="list-group-item px-0">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">
+                                <a href="{% url 'task_detail' activity.id %}" class="text-decoration-none">
+                                    {{ activity.title }}
+                                </a>
+                            </h6>
+                            <span class="badge {% if activity.status == 'not_started' %}bg-secondary{% elif activity.status == 'in_progress' %}bg-primary{% elif activity.status == 'review' %}bg-warning text-dark{% elif activity.status == 'completed' %}bg-success{% elif activity.status == 'delayed' %}bg-danger{% else %}bg-dark{% endif %}">
+                                {{ activity.get_status_display }}
+                            </span>
+                        </div>
+                        <p class="mb-1 small text-muted">{{ activity.description|truncatechars:80 }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                {% if activity.assigned_to %}
+                                <div class="bg-light rounded-circle d-flex justify-content-center align-items-center me-2" style="width: 24px; height: 24px;">
+                                    <i class="fas fa-user fa-xs"></i>
+                                </div>
+                                <small>{{ activity.assigned_to.get_full_name|default:activity.assigned_to.username }}</small>
+                                {% else %}
+                                <small class="text-muted">
+                                    <i class="fas fa-user-slash me-1"></i>Neatribuit
+                                </small>
+                                {% endif %}
+                            </div>
+                            <small class="{% if activity.is_overdue %}text-danger{% endif %}">
+                                <i class="fas fa-calendar-alt me-1"></i>{{ activity.due_date|date:"d M" }}
+                                {% if activity.is_overdue %}<i class="fas fa-exclamation-circle ms-1" title="Depășit"></i>{% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if recent_activities.count >= 10 %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'all_tasks' %}?project={{ project.id }}" class="btn btn-sm btn-outline-success">
+                        Vezi toate activitățile
+                    </a>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                    <h5>Nu există activități</h5>
+                    <p class="mb-3">Creează primul task pentru această echipă.</p>
+                    <a href="{% url 'create_task' %}?project={{ project.id }}" class="btn btn-success">
+                        <i class="fas fa-plus me-2"></i>Primul task
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progres echipă -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Progres echipă</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Progres general</h6>
+                        <div class="progress mb-3" style="height: 25px;">
+                            <div class="progress-bar {% if project.progress_percentage > 75 %}bg-success{% elif project.progress_percentage > 25 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ project.progress_percentage }}%;" aria-valuenow="{{ project.progress_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                {{ project.progress_percentage }}%
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between text-muted small">
+                            <span>Început: {{ project.start_date|date:"d M Y" }}</span>
+                            <span class="{% if project.is_overdue %}text-danger{% endif %}">
+                                Termen: {{ project.end_date|date:"d M Y" }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Distribuția task-urilor</h6>
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <div class="text-secondary">
+                                    <div class="fw-bold">{{ total_activities|add:completed_activities|sub:completed_activities }}</div>
+                                    <small>Noi</small>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="text-primary">
+                                    <div class="fw-bold">{{ total_activities|add:completed_activities|sub:completed_activities|sub:overdue_activities }}</div>
+                                    <small>În lucru</small>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="text-success">
+                                    <div class="fw-bold">{{ completed_activities }}</div>
+                                    <small>Finalizate</small>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="text-danger">
+                                    <div class="fw-bold">{{ overdue_activities }}</div>
+                                    <small>Întârziate</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

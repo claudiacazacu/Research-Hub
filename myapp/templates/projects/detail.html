@@ -1,0 +1,529 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ project.title }} - Platforma de Cercetare{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Acasă</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'projects_list' %}">Proiecte</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ project.title }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2">{{ project.title }}</h1>
+    <div class="d-flex">
+        {% for member in members %}
+            {% if member.user == request.user and member.role in 'leader,admin' %}
+            <div class="dropdown me-2">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="projectActionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-cog me-1"></i>Acțiuni
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="projectActionsDropdown">
+                    <li><a class="dropdown-item" href="#">
+                        <i class="fas fa-edit me-2"></i>Editează proiectul
+                    </a></li>
+                    <li><a class="dropdown-item" href="#">
+                        <i class="fas fa-users me-2"></i>Gestionează membrii
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#">
+                        <i class="fas fa-trash-alt me-2"></i>Șterge proiectul
+                    </a></li>
+                </ul>
+            </div>
+            {% endif %}
+        {% endfor %}
+        <a href="{% url 'projects_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Înapoi la lista de proiecte
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card shadow h-100">
+            <div class="card-header bg-white">
+                <ul class="nav nav-tabs card-header-tabs" id="projectTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true">
+                            <i class="fas fa-info-circle me-1"></i>Prezentare generală
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="activities-tab" data-bs-toggle="tab" data-bs-target="#activities" type="button" role="tab" aria-controls="activities" aria-selected="false">
+                            <i class="fas fa-tasks me-1"></i>Activități
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="budget-tab" data-bs-toggle="tab" data-bs-target="#budget" type="button" role="tab" aria-controls="budget" aria-selected="false">
+                            <i class="fas fa-file-invoice-dollar me-1"></i>Buget
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="false">
+                            <i class="fas fa-file-alt me-1"></i>Documente
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="projectTabsContent">
+                    <!-- Prezentare generală -->
+                    <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+                        <h4 class="card-title">Despre proiect</h4>
+                        <p class="card-text">{{ project.description }}</p>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <h5>Detalii proiect</h5>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">
+                                        <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                                        <strong>Data începerii:</strong> {{ project.start_date|date:"d F Y" }}
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-calendar-check me-2 text-primary"></i>
+                                        <strong>Termen limită:</strong> 
+                                        <span class="{% if project.is_overdue %}text-danger{% endif %}">
+                                            {{ project.end_date|date:"d F Y" }}
+                                            {% if project.is_overdue %}<i class="fas fa-exclamation-circle ms-1" title="Depășit"></i>{% endif %}
+                                        </span>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-hourglass-half me-2 text-primary"></i>
+                                        <strong>Zile rămase:</strong> {{ project.days_remaining }}
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle me-2 text-primary"></i>
+                                        <strong>Status:</strong> 
+                                        <span class="badge {% if project.status == 'in_progress' %}bg-success{% elif project.status == 'planning' %}bg-warning text-dark{% elif project.status == 'completed' %}bg-info{% elif project.status == 'on_hold' %}bg-secondary{% elif project.status == 'archived' %}bg-dark{% else %}bg-primary{% endif %}">
+                                            {{ project.get_status_display }}
+                                        </span>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-clock me-2 text-primary"></i>
+                                        <strong>Creat la:</strong> {{ project.created_at|date:"d.m.Y H:i" }}
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-user me-2 text-primary"></i>
+                                        <strong>Creat de:</strong> {{ project.created_by.get_full_name|default:project.created_by.username }}
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Progres proiect</h5>
+                                <div class="progress mb-3" style="height: 20px;">
+                                    <div class="progress-bar {% if progress > 75 %}bg-success{% elif progress > 25 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ progress }}%;" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">{{ progress }}%</div>
+                                </div>
+                                
+                                <h5 class="mt-4">Obiective</h5>
+                                {% if objectives %}
+                                <div class="list-group">
+                                    {% for objective in objectives %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">{{ objective.title }}</h6>
+                                            <span class="badge bg-primary">{{ objective.progress_percentage }}%</span>
+                                        </div>
+                                        <div class="progress mt-2" style="height: 5px;">
+                                            <div class="progress-bar" role="progressbar" style="width: {{ objective.progress_percentage }}%;" aria-valuenow="{{ objective.progress_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-muted">Nu există obiective definite pentru acest proiect.</p>
+                                <a href="#" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-plus me-1"></i>Adaugă obiectiv
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Activități -->
+                    <div class="tab-pane fade" id="activities" role="tabpanel" aria-labelledby="activities-tab">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="card-title">Activități</h4>
+                            <a href="#" class="btn btn-sm btn-primary">
+                                <i class="fas fa-plus me-1"></i>Adaugă activitate
+                            </a>
+                        </div>
+                        
+                        {% if activities %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Activitate</th>
+                                        <th>Status</th>
+                                        <th>Deadline</th>
+                                        <th>Responsabil</th>
+                                        <th>Acțiuni</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for activity in activities %}
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <span class="fw-bold">{{ activity.title }}</span>
+                                                <div class="small text-muted">{{ activity.description|truncatechars:60 }}</div>
+                                                {% if activity.objective %}
+                                                <span class="badge bg-light text-dark">{{ activity.objective.title }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if activity.status == 'not_started' %}bg-secondary{% elif activity.status == 'in_progress' %}bg-primary{% elif activity.status == 'review' %}bg-warning text-dark{% elif activity.status == 'completed' %}bg-success{% elif activity.status == 'delayed' %}bg-danger{% else %}bg-dark{% endif %}">
+                                                {{ activity.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="{% if activity.is_overdue %}text-danger{% endif %}">
+                                                {{ activity.due_date|date:"d M Y" }}
+                                                {% if activity.is_overdue %}<i class="fas fa-exclamation-circle ms-1" title="Depășit"></i>{% endif %}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if activity.assigned_to %}
+                                            <span>{{ activity.assigned_to.get_full_name|default:activity.assigned_to.username }}</span>
+                                            {% else %}
+                                            <span class="text-muted">Neatribuit</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a href="#" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-success">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                            <h5>Nu există activități pentru acest proiect</h5>
+                            <p class="mb-3">Adaugă prima activitate pentru a începe lucrul la proiect.</p>
+                            <a href="#" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Adaugă activitate
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Buget -->
+                    <div class="tab-pane fade" id="budget" role="tabpanel" aria-labelledby="budget-tab">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="card-title">Buget</h4>
+                            {% if not budget %}
+                            <a href="#" class="btn btn-sm btn-primary">
+                                <i class="fas fa-plus me-1"></i>Adaugă buget
+                            </a>
+                            {% else %}
+                            <a href="#" class="btn btn-sm btn-primary">
+                                <i class="fas fa-plus me-1"></i>Adaugă cheltuială
+                            </a>
+                            {% endif %}
+                        </div>
+                        
+                        {% if budget %}
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-4 text-center">
+                                        <h5>Buget total</h5>
+                                        <h3 class="text-primary">{{ budget.total_amount }} {{ budget.currency }}</h3>
+                                    </div>
+                                    <div class="col-md-4 text-center">
+                                        <h5>Buget utilizat</h5>
+                                        <h3 class="{% if budget.spent_percentage > 90 %}text-danger{% elif budget.spent_percentage > 70 %}text-warning{% else %}text-success{% endif %}">
+                                            {{ budget.spent_amount }} {{ budget.currency }}
+                                        </h3>
+                                    </div>
+                                    <div class="col-md-4 text-center">
+                                        <h5>Buget rămas</h5>
+                                        <h3 class="{% if budget.spent_percentage > 90 %}text-danger{% elif budget.spent_percentage > 70 %}text-warning{% else %}text-success{% endif %}">
+                                            {{ budget.remaining_amount }} {{ budget.currency }}
+                                        </h3>
+                                    </div>
+                                </div>
+                                <div class="progress mt-3" style="height: 20px;">
+                                    <div class="progress-bar {% if budget.spent_percentage > 90 %}bg-danger{% elif budget.spent_percentage > 70 %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ budget.spent_percentage }}%;" aria-valuenow="{{ budget.spent_percentage }}" aria-valuemin="0" aria-valuemax="100">{{ budget.spent_percentage }}%</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h5>Alocări buget</h5>
+                                {% if budget_allocations %}
+                                <div class="list-group">
+                                    {% for allocation in budget_allocations %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">{{ allocation.category.name }}</h6>
+                                            <span>{{ allocation.allocated_amount }} {{ budget.currency }}</span>
+                                        </div>
+                                        <div class="progress mt-2" style="height: 5px;">
+                                            {% with spent_percentage=allocation.spent_amount|floatformat:0 %}
+                                            <div class="progress-bar {% if spent_percentage > 90 %}bg-danger{% elif spent_percentage > 70 %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ spent_percentage }}%;" aria-valuenow="{{ spent_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                            {% endwith %}
+                                        </div>
+                                        <div class="d-flex justify-content-between small text-muted mt-1">
+                                            <span>Utilizat: {{ allocation.spent_amount }} {{ budget.currency }}</span>
+                                            <span>Rămas: {{ allocation.remaining_amount }} {{ budget.currency }}</span>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-muted">Nu există alocări bugetare definite.</p>
+                                <a href="#" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-plus me-1"></i>Adaugă alocare
+                                </a>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5>Cheltuieli recente</h5>
+                                {% if expenses %}
+                                <div class="list-group">
+                                    {% for expense in expenses|slice:":5" %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">{{ expense.description }}</h6>
+                                            <span class="fw-bold {% if expense.status == 'approved' %}text-success{% elif expense.status == 'rejected' %}text-danger{% else %}text-warning{% endif %}">
+                                                {{ expense.amount }} {{ budget.currency }}
+                                            </span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span class="badge bg-light text-dark">{{ expense.category.name }}</span>
+                                                <small class="text-muted ms-2">{{ expense.date|date:"d.m.Y" }}</small>
+                                            </div>
+                                            <span class="badge {% if expense.status == 'approved' %}bg-success{% elif expense.status == 'rejected' %}bg-danger{% else %}bg-warning{% endif %}">
+                                                {{ expense.get_status_display }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% if expenses.count > 5 %}
+                                <div class="text-center mt-2">
+                                    <a href="#" class="btn btn-sm btn-outline-primary">
+                                        Vezi toate cheltuielile ({{ expenses.count }})
+                                    </a>
+                                </div>
+                                {% endif %}
+                                {% else %}
+                                <p class="text-muted">Nu există cheltuieli înregistrate.</p>
+                                <a href="#" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-plus me-1"></i>Adaugă cheltuială
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-file-invoice-dollar fa-3x text-muted mb-3"></i>
+                            <h5>Nu există buget definit pentru acest proiect</h5>
+                            <p class="mb-3">Adaugă un buget pentru a putea gestiona resursele financiare ale proiectului.</p>
+                            <a href="#" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Adaugă buget
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Documente -->
+                    <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="card-title">Documente</h4>
+                            <a href="#" class="btn btn-sm btn-primary">
+                                <i class="fas fa-upload me-1"></i>Încarcă document
+                            </a>
+                        </div>
+                        
+                        {% if documents %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Document</th>
+                                        <th>Categorie</th>
+                                        <th>Încărcat de</th>
+                                        <th>Data</th>
+                                        <th>Acțiuni</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for document in documents %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="
+                                                    {% if document.doc_type == 'report' %}fas fa-file-alt
+                                                    {% elif document.doc_type == 'contract' %}fas fa-file-contract
+                                                    {% elif document.doc_type == 'article' %}fas fa-file-word
+                                                    {% elif document.doc_type == 'presentation' %}fas fa-file-powerpoint
+                                                    {% elif document.doc_type == 'data' %}fas fa-file-csv
+                                                    {% else %}fas fa-file
+                                                    {% endif %} 
+                                                    fa-2x me-3 text-primary"></i>
+                                                <div>
+                                                    <span class="fw-bold">{{ document.title }}</span>
+                                                    <div class="small text-muted">{{ document.description|truncatechars:60 }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ document.category.name }}</td>
+                                        <td>{{ document.uploaded_by.get_full_name|default:document.uploaded_by.username }}</td>
+                                        <td>{{ document.uploaded_at|date:"d.m.Y H:i" }}</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a href="#" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-download"></i>
+                                                </a>
+                                                <a href="#" class="btn btn-sm btn-outline-secondary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                            <h5>Nu există documente pentru acest proiect</h5>
+                            <p class="mb-3">Încarcă primul document pentru a facilita colaborarea în echipă.</p>
+                            <a href="#" class="btn btn-primary">
+                                <i class="fas fa-upload me-2"></i>Încarcă document
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Echipa proiectului -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Echipa proiectului</h5>
+                {% for member in members %}
+                    {% if member.user == request.user and member.role in 'leader,admin' %}
+                    <a href="#" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-user-plus"></i>
+                    </a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <div class="card-body">
+                {% if members %}
+                <ul class="list-group list-group-flush">
+                    {% for member in members %}
+                    <li class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-light rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">{{ member.user.get_full_name|default:member.user.username }}
+                                    {% if member.user == request.user %}
+                                    <span class="badge bg-primary ms-1">Tu</span>
+                                    {% endif %}
+                                    </h6>
+                                    <small class="text-muted">{{ member.get_role_display }}</small>
+                                </div>
+                            </div>
+                            {% for m in members %}
+                                {% if m.user == request.user and m.role in 'leader,admin' and m.user != member.user %}
+                                <div class="dropdown">
+                                    <button class="btn btn-sm" type="button" id="memberDropdown{{ member.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="memberDropdown{{ member.id }}">
+                                        <li><a class="dropdown-item" href="#">
+                                            <i class="fas fa-user-edit me-2"></i>Schimbă rolul
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger" href="#">
+                                            <i class="fas fa-user-minus me-2"></i>Elimină din proiect
+                                        </a></li>
+                                    </ul>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">Nu există membri în echipa proiectului.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Activități recente -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Activități apropiate</h5>
+            </div>
+            <div class="card-body">
+                {% if activities %}
+                <div class="list-group list-group-flush">
+                    {% for activity in activities|slice:":5" %}
+                    <div class="list-group-item px-0">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ activity.title }}</h6>
+                            <span class="badge {% if activity.status == 'not_started' %}bg-secondary{% elif activity.status == 'in_progress' %}bg-primary{% elif activity.status == 'review' %}bg-warning text-dark{% elif activity.status == 'completed' %}bg-success{% elif activity.status == 'delayed' %}bg-danger{% else %}bg-dark{% endif %}">
+                                {{ activity.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small>
+                                {% if activity.assigned_to %}
+                                <i class="fas fa-user me-1"></i>{{ activity.assigned_to.get_full_name|default:activity.assigned_to.username }}
+                                {% else %}
+                                <i class="fas fa-user me-1"></i>Neatribuit
+                                {% endif %}
+                            </small>
+                            <small class="{% if activity.is_overdue %}text-danger{% endif %}">
+                                <i class="fas fa-calendar-alt me-1"></i>{{ activity.due_date|date:"d M Y" }}
+                                {% if activity.is_overdue %}<i class="fas fa-exclamation-circle ms-1" title="Depășit"></i>{% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if activities.count > 5 %}
+                <div class="text-center mt-3">
+                    <a href="#activities" class="btn btn-sm btn-outline-primary" data-bs-toggle="tab" data-bs-target="#activities">
+                        Vezi toate activitățile ({{ activities.count }})
+                    </a>
+                </div>
+                {% endif %}
+                {% else %}
+                <p class="text-muted">Nu există activități pentru acest proiect.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,4 +1,149 @@
-{% extends "base.html" %} {% block title %} Home Page {% endblock %}
- {% block content %}
-<p> asta e pagina de start</p>
+{% extends 'base.html' %}
+
+{% block title %}Acasă - Platforma de Cercetare{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-5">
+    <div class="col-lg-12">
+        <h1 class="display-4 mb-3">Platforma de gestiune a proiectelor de cercetare</h1>
+        <p class="lead mb-4">Organizează, monitorizează și colaborează eficient în proiectele tale de cercetare științifică.</p>
+        {% if user.is_authenticated %}
+        <div class="d-grid gap-2 d-md-flex">
+            <a href="{% url 'projects_list' %}" class="btn btn-primary btn-lg px-4">
+                <i class="fas fa-project-diagram me-2"></i>Proiectele mele
+            </a>
+            <a href="{% url 'create_project' %}" class="btn btn-outline-secondary btn-lg px-4">
+                <i class="fas fa-plus me-2"></i>Proiect nou
+            </a>
+        </div>
+        {% else %}
+        <div class="d-grid gap-2 d-md-flex">
+            <a href="{% url 'login' %}" class="btn btn-primary btn-lg px-4">
+                <i class="fas fa-sign-in-alt me-2"></i>Autentificare
+            </a>
+            <a href="{% url 'register' %}" class="btn btn-outline-secondary btn-lg px-4">
+                <i class="fas fa-user-plus me-2"></i>Înregistrare
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<hr class="my-5">
+
+
+
+<hr class="my-5">
+
+{% if user.is_authenticated and user_projects %}
+<div class="row mb-5">
+    <div class="col-12 mb-4">
+        <h2>Proiecte recente</h2>
+    </div>
+    
+    {% for membership in user_projects %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="badge {% if membership.project.status == 'in_progress' %}bg-success{% elif membership.project.status == 'planning' %}bg-warning text-dark{% elif membership.project.status == 'completed' %}bg-info{% elif membership.project.status == 'on_hold' %}bg-secondary{% elif membership.project.status == 'archived' %}bg-dark{% else %}bg-primary{% endif %}">
+                    {{ membership.project.get_status_display }}
+                </span>
+                <small class="text-muted">Actualizat: {{ membership.project.updated_at|date:"d M Y" }}</small>
+            </div>
+            <div class="card-body">
+                <h3 class="card-title h5">{{ membership.project.title }}</h3>
+                <p class="card-text">{{ membership.project.description|truncatechars:100 }}</p>
+                <div class="progress mb-3" style="height: 10px;">
+                    <div class="progress-bar {% if membership.project.progress_percentage > 75 %}bg-success{% elif membership.project.progress_percentage > 25 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ membership.project.progress_percentage }}%;" aria-valuenow="{{ membership.project.progress_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="d-flex justify-content-between small text-muted mb-3">
+                    <span><i class="fas fa-calendar-alt me-1"></i>Termen: {{ membership.project.end_date|date:"d M Y" }}</span>
+                    <span><i class="fas fa-users me-1"></i>{{ membership.project.members.count }} membri</span>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'project_detail' membership.project.id %}" class="btn btn-sm btn-outline-primary">Vezi detalii</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <div class="col-12 text-center mt-3">
+        <a href="{% url 'projects_list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-th-list me-2"></i>Toate proiectele
+        </a>
+    </div>
+</div>
+
+{% if upcoming_activities %}
+<hr class="my-5">
+
+<div class="row mb-5">
+    <div class="col-12 mb-4">
+        <h2>Activități apropiate</h2>
+    </div>
+    
+    <div class="col-12">
+        <div class="list-group">
+            {% for activity in upcoming_activities %}
+            <a href="{% url 'project_detail' activity.project.id %}" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">{{ activity.title }}</h5>
+                    <span class="badge {% if activity.is_overdue %}bg-danger{% elif activity.due_date|date:"Y-m-d" == today %}bg-danger{% elif activity.due_date|timeuntil|length < 3 %}bg-warning text-dark{% else %}bg-primary{% endif %}">
+                        {% if activity.is_overdue %}
+                            Depășit
+                        {% elif activity.due_date|date:"Y-m-d" == today %}
+                            Astăzi
+                        {% else %}
+                            {{ activity.due_date|timeuntil }}
+                        {% endif %}
+                    </span>
+                </div>
+                <p class="mb-1">{{ activity.description|truncatechars:100 }}</p>
+                <small><i class="fas fa-project-diagram me-1"></i>{{ activity.project.title }}</small>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% elif user.is_authenticated %}
+<div class="row mb-5">
+    <div class="col-md-8 offset-md-2 text-center">
+        <div class="card">
+            <div class="card-body p-5">
+                <i class="fas fa-project-diagram fa-4x text-muted mb-3"></i>
+                <h3 class="mb-4">Nu ești membru al niciunui proiect încă</h3>
+                <p>Creează primul tău proiect pentru a începe să organizezi și să monitorizezi activitățile de cercetare.</p>
+                <div class="d-grid gap-2 d-md-flex justify-content-center">
+                    <a href="{% url 'create_project' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus me-2"></i>Crează primul proiect
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row mb-5">
+    <div class="col-md-6 offset-md-3 text-center">
+        <div class="card">
+            <div class="card-body p-5">
+                <h3 class="mb-4">Autentifică-te pentru a accesa platforma</h3>
+                <p>Trebuie să fii autentificat pentru a vedea proiectele și a colabora cu echipa ta.</p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'login' %}" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt me-2"></i>Autentificare
+                    </a>
+                    <a href="{% url 'register' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-user-plus me-2"></i>Înregistrare
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}

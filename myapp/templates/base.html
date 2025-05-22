@@ -29,29 +29,31 @@
                     </li>
                     {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{% url 'projects_list' %}">
                             <i class="fas fa-project-diagram me-1"></i>Proiecte
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{% url 'teams_list' %}">
                             <i class="fas fa-users me-1"></i>Echipe
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-tasks me-1"></i>Activități
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-tasks me-1"></i>Task-uri
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-file-invoice-dollar me-1"></i>Buget
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-file-alt me-1"></i>Documente
-                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'my_tasks' %}">
+                                <i class="fas fa-user me-2"></i>Task-urile mele
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'all_tasks' %}">
+                                <i class="fas fa-list me-2"></i>Toate task-urile
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'create_task' %}">
+                                <i class="fas fa-plus me-2"></i>Task nou
+                            </a></li>
+                        </ul>
                     </li>
                     {% endif %}
                 </ul>
@@ -66,33 +68,52 @@
                             <li><h6 class="dropdown-header">Notificări</h6></li>
                             <li><a class="dropdown-item" href="#">Deadline proiect aproape</a></li>
                             <li><a class="dropdown-item" href="#">Activitate nouă atribuită</a></li>
-                            <li><a class="dropdown-item" href="#">Document actualizat</a></li>
+                            <li><a class="dropdown-item" href="#">Modificare la echipă</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">Toate notificările</a></li>
+                            <li><a class="dropdown-item" href="{% url 'notifications_list' %}">
+                                <i class="fas fa-list me-2"></i>Toate notificările
+                            </a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i>Profil
+                            {% if user.profile.picture %}
+                            <img src="{{ user.profile.picture.url }}" alt="{{ user.username }}" class="rounded-circle me-1" style="width: 24px; height: 24px; object-fit: cover;">
+                            {% else %}
+                            <i class="fas fa-user-circle me-1"></i>
+                            {% endif %}
+                            {{ user.first_name|default:user.username }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">Profilul meu</a></li>
-                            <li><a class="dropdown-item" href="#">Setări</a></li>
+                            <li><h6 class="dropdown-header">{{ user.get_full_name|default:user.username }}</h6></li>
+                            <li><small class="dropdown-item-text text-muted">{{ user.email }}</small></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">Deconectare</a></li>
+                            <li><a class="dropdown-item" href="{% url 'profile' %}">
+                                <i class="fas fa-user me-2"></i>Profilul meu
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'my_tasks' %}">
+                                <i class="fas fa-tasks me-2"></i>Task-urile mele
+                            </a></li>
+                            <li><a class="dropdown-item" href="#">
+                                <i class="fas fa-cog me-2"></i>Setări
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Deconectare
+                            </a></li>
                         </ul>
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{% url 'login' %}">
                             <i class="fas fa-sign-in-alt me-1"></i>Autentificare
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{% url 'register' %}">
                             <i class="fas fa-user-plus me-1"></i>Înregistrare
                         </a>
-                    </li>
+    </li>
                     {% endif %}
                 </ul>
             </div>

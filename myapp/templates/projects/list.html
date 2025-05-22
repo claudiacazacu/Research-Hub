@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}Proiectele Mele - Platforma de Cercetare{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2">Proiectele Mele</h1>
+    <a href="#" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>Proiect nou
+    </a>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header bg-light py-3">
+        <form method="get" class="row g-3">
+            <div class="col-md-6 col-lg-4">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Caută proiecte..." value="{{ search_query|default:'' }}">
+                    <button class="btn btn-outline-primary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-3">
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">Toate statusurile</option>
+                    {% for status in all_statuses %}
+                    <option value="{{ status }}" {% if current_status == status %}selected{% endif %}>
+                        {{ status|title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 col-lg-3">
+                <select name="sort" class="form-select" onchange="this.form.submit()">
+                    <option value="-project__updated_at" {% if current_sort == '-project__updated_at' %}selected{% endif %}>Cele mai recente</option>
+                    <option value="project__updated_at" {% if current_sort == 'project__updated_at' %}selected{% endif %}>Cele mai vechi</option>
+                    <option value="project__title" {% if current_sort == 'project__title' %}selected{% endif %}>Alfabetic (A-Z)</option>
+                    <option value="-project__title" {% if current_sort == '-project__title' %}selected{% endif %}>Alfabetic (Z-A)</option>
+                    <option value="project__end_date" {% if current_sort == 'project__end_date' %}selected{% endif %}>Termen apropiat</option>
+                </select>
+            </div>
+            {% if search_query or current_status %}
+            <div class="col-12">
+                <a href="{% url 'projects_list' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i>Resetează filtrele
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+    <div class="card-body">
+        {% if page_obj %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Titlu</th>
+                        <th>Status</th>
+                        <th>Progres</th>
+                        <th>Termen</th>
+                        <th>Membri</th>
+                        <th>Acțiuni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for membership in page_obj %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div>
+                                    <a href="{% url 'project_detail' membership.project.id %}" class="text-decoration-none fw-bold">
+                                        {{ membership.project.title }}
+                                    </a>
+                                    <div class="small text-muted">{{ membership.project.description|truncatechars:60 }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge {% if membership.project.status == 'in_progress' %}bg-success{% elif membership.project.status == 'planning' %}bg-warning text-dark{% elif membership.project.status == 'completed' %}bg-info{% elif membership.project.status == 'on_hold' %}bg-secondary{% elif membership.project.status == 'archived' %}bg-dark{% else %}bg-primary{% endif %}">
+                                {{ membership.project.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="progress" style="height: 8px; width: 100px;">
+                                <div class="progress-bar {% if membership.project.progress_percentage > 75 %}bg-success{% elif membership.project.progress_percentage > 25 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ membership.project.progress_percentage }}%;" aria-valuenow="{{ membership.project.progress_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <span class="small">{{ membership.project.progress_percentage }}%</span>
+                        </td>
+                        <td>
+                            <span class="{% if membership.project.is_overdue %}text-danger{% endif %}">
+                                {{ membership.project.end_date|date:"d M Y" }}
+                                {% if membership.project.is_overdue %}<i class="fas fa-exclamation-circle ms-1" title="Depășit"></i>{% endif %}
+                            </span>
+                            <div class="small text-muted">{{ membership.project.days_remaining }} zile rămase</div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-primary">{{ membership.project.members.count }}</span>
+                                <span class="ms-2 small">({{ membership.get_role_display }})</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'project_detail' membership.project.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if membership.role in 'leader,admin' %}
+                                <a href="#" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-project-diagram fa-4x text-muted mb-3"></i>
+            {% if search_query or current_status %}
+            <h5>Nu am găsit proiecte care să corespundă criteriilor tale de căutare.</h5>
+            <p class="mb-3">Încearcă alte cuvinte cheie sau resetează filtrele.</p>
+            <a href="{% url 'projects_list' %}" class="btn btn-outline-primary">
+                <i class="fas fa-times me-1"></i>Resetează filtrele
+            </a>
+            {% else %}
+            <h5>Nu ești membru al niciunui proiect momentan.</h5>
+            <p class="mb-3">Creează primul tău proiect sau cere să fii adăugat la un proiect existent.</p>
+            <a href="#" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Creează un proiect nou
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
