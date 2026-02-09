@@ -17,7 +17,6 @@ class CustomUserCreationForm(UserCreationForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Adăugăm clase Bootstrap la câmpuri
         for field_name in self.fields:
             self.fields[field_name].widget.attrs['class'] = 'form-control'
             
@@ -28,7 +27,6 @@ class CustomUserCreationForm(UserCreationForm):
         user.last_name = self.cleaned_data['last_name']
         if commit:
             user.save()
-            # Creăm și un profil pentru utilizator
             Profile.objects.create(user=user)
         return user
 
@@ -109,7 +107,6 @@ class ActivityForm(forms.ModelForm):
     def __init__(self, project=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if project:
-            # Filtrăm obiectivele și utilizatorii în funcție de proiect
             self.fields['objective'].queryset = Objective.objects.filter(project=project)
             member_users = User.objects.filter(project_memberships__project=project)
             self.fields['assigned_to'].queryset = member_users
