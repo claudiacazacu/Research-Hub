@@ -6,7 +6,6 @@ from .models import (
 )
 
 class CustomUserCreationForm(UserCreationForm):
-    """Formular personalizat pentru înregistrarea utilizatorilor."""
     email = forms.EmailField(required=True)
     first_name = forms.CharField(required=True, max_length=30)
     last_name = forms.CharField(required=True, max_length=30)
@@ -32,16 +31,13 @@ class CustomUserCreationForm(UserCreationForm):
 
 
 class CustomAuthenticationForm(AuthenticationForm):
-    """Formular personalizat pentru autentificare."""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Adăugăm clase Bootstrap la câmpuri
         for field_name in self.fields:
             self.fields[field_name].widget.attrs['class'] = 'form-control'
 
 
 class ProfileForm(forms.ModelForm):
-    """Formular pentru editarea profilului utilizatorului."""
     class Meta:
         model = Profile
         fields = ['picture', 'bio', 'institution', 'position', 'phone', 'role']
@@ -55,7 +51,6 @@ class ProfileForm(forms.ModelForm):
 
 
 class ProjectForm(forms.ModelForm):
-    """Formular pentru crearea și editarea proiectelor."""
     class Meta:
         model = Project
         fields = ['title', 'description', 'start_date', 'end_date', 'status']
@@ -79,7 +74,6 @@ class ProjectForm(forms.ModelForm):
 
 
 class ObjectiveForm(forms.ModelForm):
-    """Formular pentru crearea și editarea obiectivelor."""
     class Meta:
         model = Objective
         fields = ['title', 'description']
@@ -90,7 +84,6 @@ class ObjectiveForm(forms.ModelForm):
 
 
 class ActivityForm(forms.ModelForm):
-    """Formular pentru crearea și editarea activităților."""
     class Meta:
         model = Activity
         fields = ['title', 'description', 'objective', 'start_date', 'due_date', 'assigned_to', 'status']
