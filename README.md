@@ -78,7 +78,7 @@ researchhub/
 5. **Monitorizare** - urmărirea progresului și respectarea termenelor
 6. **Finalizare** - completarea proiectului și generarea rapoartelor
 
-##  Autor
+##  Alte informații
 
 **Dezvoltat ca proiect academic**
 - Platformă web pentru gestionarea proiectelor de cercetare
